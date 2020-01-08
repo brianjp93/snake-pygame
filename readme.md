@@ -9,6 +9,9 @@ I changed it signifcantly so that I could hack my bot into it
 to play it for me.
 
 ### BFS Shortest Path
+
+![Snake Using BFS](/bfs.gif "Snake with BFS")
+
 Every time I get an apple, I do a BFS to find the shortest path to the next apple.
 I just keep doing that until it is no longer possible.
 
