@@ -87,9 +87,8 @@ def shortest_path_games():
         if m is None:
             print('NO PATH FOUND')
             time.sleep(30)
-        else:
-            for choice in m:
-                _, reward = app.do_step(choice)
+        for choice in m:
+            _, reward = app.do_step(choice)
         if app.is_quit:
             app = App()
             app.on_init()

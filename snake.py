@@ -29,6 +29,8 @@ class Apple:
 
     def move(self, not_allowed):
         self.old = self.cur
+        self.x = randint(2, WIDTH_SPACES-2) * WIDTH_STEP
+        self.y = randint(2, HEIGHT_SPACES-2) * HEIGHT_STEP
         while (self.x, self.y) in not_allowed:
             self.x = randint(2, WIDTH_SPACES-2) * WIDTH_STEP
             self.y = randint(2, HEIGHT_SPACES-2) * HEIGHT_STEP
@@ -36,7 +38,10 @@ class Apple:
     def draw(self, surface, image):
         self.cur = surface.blit(image, (self.x, self.y))
 
-
+    def get_update_rects(self):
+        return [self.cur, self.old]
+ 
+ 
 class Player:
     direction = 'right'
     opp_dir = {
@@ -50,9 +55,10 @@ class Player:
         'right': (1, 0),
         'down': (0, 1),
         'left': (-1, 0)
-    } 
+    }
     last_tail = (0,0)
-
+    rects = []
+ 
     def __init__(self, length):
         self.length = length
         self.score = 0
@@ -81,7 +87,7 @@ class Player:
             else:
                 moves[key] = True
         return [int(i) for i in moves.values()]
-
+ 
     def update(self):
         # update position of head of snake
         self.last_tail = (self.x[self.length-1], self.y[self.length-1])
@@ -92,8 +98,11 @@ class Player:
         self.y.pop()
 
     def draw(self, surface, image):
+        rects = []
         for i in range(self.length):
-            surface.blit(image, (self.x[i], self.y[i]))
+            rects.append(surface.blit(image, (self.x[i], self.y[i])))
+        self.rects = rects
+
 
     def is_hit_wall(self):
         if self.is_wall(self.x[0], self.y[0]):
@@ -118,12 +127,16 @@ class Player:
                 self.y.append(0)
                 return True
 
-
+    def get_update_rects(self):
+        rects = list(self.rects)
+        rects.append(pygame.Rect(self.last_tail[0], self.last_tail[1], WIDTH_STEP, HEIGHT_STEP))
+        return rects
+ 
 class App:
     player = 0
     apple = 0
     IMAGE_SIZE = WIDTH_STEP
-
+ 
     def __init__(self):
         self._display_surf = None
         self._image_surf = None
@@ -186,18 +199,18 @@ class App:
                     break
         return reversed(moves)
 
-
+ 
     def on_init(self):
         pygame.init()
         self.is_quit = False
         self._display_surf = pygame.display.set_mode((WIDTH, HEIGHT), pygame.HWSURFACE)
-
+ 
         pygame.display.set_caption('Pygame pythonspot.com example')
         self._image_surf = pygame.image.load("img/snake_100.jpg").convert()
         self._image_surf = pygame.transform.scale(self._image_surf, (self.IMAGE_SIZE, self.IMAGE_SIZE))
         self._apple_surf = pygame.image.load("img/apple.png").convert()
         self._apple_surf = pygame.transform.scale(self._apple_surf, (self.IMAGE_SIZE, self.IMAGE_SIZE))
-
+ 
     def on_loop(self):
         ox, oy = self.distance_to_apple()
         self.player.update()
@@ -206,7 +219,7 @@ class App:
             reward = 1
         else:
             reward = -1
-
+ 
         # does snake eat apple?
         if self.player.is_eat_apple(self.apple):
             reward = 50
@@ -241,11 +254,13 @@ class App:
         self.player.draw(self._display_surf, self._image_surf)
         self.apple.draw(self._display_surf, self._apple_surf)
 
+        # updates += self.apple.get_update_rects()
+        # updates += self.player.get_update_rects()
         pygame.display.update()
 
     def on_execute(self):
         self.on_init()
-
+ 
         start = 0
         next_direction = 'right'
         while True:
@@ -253,8 +268,10 @@ class App:
             end = time.perf_counter()
             if (end - start) > (FRAME_TIME):
                 start = time.perf_counter()
+                # print(self.player.get_near())
+                # print(self.distance_to_apple())
                 next_direction, reward = self.do_step(next_direction=next_direction)
-
+                
 
     def do_step(self, next_direction='right'):
         events = pygame.event.get()
@@ -266,7 +283,7 @@ class App:
                     break
                 elif event.key == K_ESCAPE:
                     self.exit()
-
+        
         # don't allow player to go backwards into themselves
         if self.player.direction != self.player.opp_dir[next_direction]:
             self.player.direction = next_direction
@@ -283,7 +300,7 @@ class App:
         # print(f'FPS: {fps}')
         return next_direction, reward
 
-
+ 
 if __name__ == "__main__" :
     theApp = App()
     theApp.on_execute()
